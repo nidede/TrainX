@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
+import SixTracks from '../views/SixTracks.vue'
+import ContestDetail from '../views/ContestDetail.vue'
 
 const routes = [
   {
@@ -20,6 +22,15 @@ const routes = [
   {
     path: '/home',
     component: Home
+  },
+  {
+    path: '/six-tracks',
+    component: SixTracks
+  },
+  {
+    path: '/contests/:id',
+    component: ContestDetail,
+    props: true
   }
 ]
 

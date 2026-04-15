@@ -41,10 +41,10 @@
         </div>
       </div>
       <div class="hero-stats">
-        <div class="hero-card yellow">
+        <router-link to="/six-tracks" class="hero-card yellow hero-card-link">
           <div class="hero-card-title">六大赛道</div>
           <p>覆盖算法竞技、工程实践、综合创新等核心能力。</p>
-        </div>
+        </router-link>
         <div class="hero-card blue">
           <div class="hero-card-title">结构化知识库</div>
           <p>题型、知识点、实战经验一键检索。</p>
@@ -261,6 +261,16 @@ const continueLearning = () => {
 
 .hero-card.yellow {
   border-color: rgba(255, 202, 40, 0.35);
+}
+
+.hero-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero-card-link:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .hero-card.blue {

@@ -45,10 +45,10 @@
           <div class="hero-card-title">六大赛道</div>
           <p>覆盖算法竞技、工程实践、综合创新等核心能力。</p>
         </router-link>
-        <div class="hero-card blue">
+        <router-link to="/problems" class="hero-card blue hero-card-link">
           <div class="hero-card-title">结构化知识库</div>
           <p>题型、知识点、实战经验一键检索。</p>
-        </div>
+        </router-link>
         <div class="hero-card red">
           <div class="hero-card-title">智能训练</div>
           <p>生成个性化赛前计划，助力备战效率最大化。</p>

@@ -5,6 +5,7 @@ import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
 import SixTracks from '../views/SixTracks.vue'
 import ContestDetail from '../views/ContestDetail.vue'
+import ProblemsList from '../views/ProblemsList.vue'
 
 const routes = [
   {
@@ -26,6 +27,10 @@ const routes = [
   {
     path: '/six-tracks',
     component: SixTracks
+  },
+  {
+    path: '/problems',
+    component: ProblemsList
   },
   {
     path: '/contests/:id',

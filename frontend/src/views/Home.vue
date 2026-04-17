@@ -14,7 +14,7 @@
           <router-link to="/register">注册</router-link>
         </template>
         <template v-else>
-          <span class="user-name">{{ username }}</span>
+          <router-link to="/user-center" class="user-center-link">{{ username }}</router-link>
           <button class="logout-btn" @click="logout">退出</button>
         </template>
       </nav>
@@ -49,10 +49,10 @@
           <div class="hero-card-title">结构化知识库</div>
           <p>题型、知识点、实战经验一键检索。</p>
         </router-link>
-        <div class="hero-card red">
+        <router-link to="/training-plan" class="hero-card red hero-card-link">
           <div class="hero-card-title">智能训练</div>
           <p>生成个性化赛前计划，助力备战效率最大化。</p>
-        </div>
+        </router-link>
       </div>
     </section>
 
@@ -99,7 +99,7 @@ const logout = () => {
 }
 
 const continueLearning = () => {
-  router.push('/login')
+  router.push('/training-plan')
 }
 </script>
 
@@ -170,6 +170,19 @@ const continueLearning = () => {
 }
 
 .home-header a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.user-center-link {
+  color: #f8fafc;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 14px;
+  transition: background 0.2s ease;
+}
+
+.user-center-link:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 

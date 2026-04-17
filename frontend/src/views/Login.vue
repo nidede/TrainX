@@ -74,10 +74,11 @@ const login = async () => {
   messageType.value = ''
 
   try {
-    const res = await axios.post('http://127.0.0.1:8000/api/users/login/', {
+    const res = await axios.post('/api/users/login/', {
       username: username.value,
       password: password.value
     })
+    localStorage.setItem('trainx_token', res.data.token)
     localStorage.setItem('trainx_user', username.value)
     router.push('/home')
   } catch (err) {

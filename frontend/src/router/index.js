@@ -6,6 +6,8 @@ import Home from '../views/Home.vue'
 import SixTracks from '../views/SixTracks.vue'
 import ContestDetail from '../views/ContestDetail.vue'
 import ProblemsList from '../views/ProblemsList.vue'
+import UserCenter from '../views/UserCenter.vue'
+import TrainingPlan from '../views/TrainingPlan.vue'
 
 const routes = [
   {
@@ -36,6 +38,14 @@ const routes = [
     path: '/contests/:id',
     component: ContestDetail,
     props: true
+  },
+  {
+    path: '/user-center',
+    component: UserCenter
+  },
+  {
+    path: '/training-plan',
+    component: TrainingPlan
   }
 ]
 

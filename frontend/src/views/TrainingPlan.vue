@@ -123,32 +123,37 @@
 
     <!-- ━━ 计划详情 / 生成预览 ━━ -->
     <div v-if="generatedPlan || viewingPlan" class="tp-result">
-      <button class="tp-back" @click="backToList">← 返回计划列表</button>
+      <div class="tp-top-bar">
+        <button class="tp-back" @click="backToList">← 返回计划列表</button>
+        <button :class="['tp-toggle-tags', { active: tpShowTags }]" @click="tpShowTags = !tpShowTags">
+          {{ tpShowTags ? '隐藏知识点' : '显示知识点' }}
+        </button>
+      </div>
 
       <!-- 概览卡片 -->
       <div class="tp-overview">
-        <div class="tp-overview__head">
-          <div>
+        <div class="tp-overview__top">
+          <div class="tp-overview__head">
             <h2>{{ displayPlan.target_competition }} · {{ displayPlan.target_award }}</h2>
             <p class="tp-overview__summary">{{ displayPlan.plan_data.summary }}</p>
           </div>
-        </div>
-        <div class="tp-overview__stats">
-          <div class="tp-stat">
-            <div class="tp-stat__val">{{ displayPlan.duration_weeks }}</div>
-            <div class="tp-stat__label">训练周数</div>
-          </div>
-          <div class="tp-stat">
-            <div class="tp-stat__val">{{ displayPlan.problems_per_week }}</div>
-            <div class="tp-stat__label">每周题量</div>
-          </div>
-          <div class="tp-stat">
-            <div class="tp-stat__val">Lv{{ displayPlan.plan_data.target_difficulty }}</div>
-            <div class="tp-stat__label">目标难度</div>
-          </div>
-          <div class="tp-stat">
-            <div class="tp-stat__val">{{ totalProblems }}</div>
-            <div class="tp-stat__label">总题量</div>
+          <div class="tp-overview__stats">
+            <div class="tp-stat">
+              <div class="tp-stat__val">{{ displayPlan.duration_weeks }}</div>
+              <div class="tp-stat__label">训练周数</div>
+            </div>
+            <div class="tp-stat">
+              <div class="tp-stat__val">{{ displayPlan.problems_per_week }}</div>
+              <div class="tp-stat__label">每周题量</div>
+            </div>
+            <div class="tp-stat">
+              <div class="tp-stat__val">Lv{{ displayPlan.plan_data.target_difficulty }}</div>
+              <div class="tp-stat__label">目标难度</div>
+            </div>
+            <div class="tp-stat">
+              <div class="tp-stat__val">{{ totalProblems }}</div>
+              <div class="tp-stat__label">总题量</div>
+            </div>
           </div>
         </div>
         <div class="tp-overview__tags">
@@ -190,7 +195,7 @@
               <a :href="p.source_url" target="_blank" rel="noopener noreferrer" class="tp-problem__main" @click="markAsAttempted(p.id)">
                 <span class="tp-problem__diff">Lv{{ p.difficulty || '—' }}</span>
                 <span class="tp-problem__title">{{ p.title }}</span>
-                <span class="tp-problem__tags">
+                <span v-if="tpShowTags" class="tp-problem__tags">
                   <span v-for="t in p.tags.slice(0, 3)" :key="t" class="tp-problem__tag">{{ t }}</span>
                 </span>
               </a>
@@ -240,6 +245,7 @@ const showWizard = ref(false)
 const savedPlans = ref([])
 const expandedWeeks = reactive({})
 const problemStatus = ref({})
+const tpShowTags = ref(true)
 
 const form = reactive({
   currentLevel: null,
@@ -437,6 +443,8 @@ async function markAsAttempted(problemId) {
     try {
       await axios.post('/api/users/problems/', { problem_id: problemId, solved: false })
     } catch (e) {
+      // 回滚本地状态
+      delete problemStatus.value[problemId]
       console.error('保存题目状态失败', e)
     }
   }
@@ -445,10 +453,13 @@ async function markAsAttempted(problemId) {
 async function toggleStatus(problemId) {
   const current = problemStatus.value[problemId] || { solved: false, attempted: false }
   const newSolved = !current.solved
+  const oldStatus = { ...current }
   problemStatus.value[problemId] = { solved: newSolved, attempted: true }
   try {
     await axios.post('/api/users/problems/', { problem_id: problemId, solved: newSolved })
   } catch (e) {
+    // 回滚本地状态
+    problemStatus.value[problemId] = oldStatus
     console.error('保存题目状态失败', e)
   }
 }
@@ -496,8 +507,8 @@ onMounted(() => {
 
 /* ━━ 头部 ━━ */
 .tp-header {
-  padding: 24px 32px 0;
-  max-width: 960px;
+  padding: 24px 48px 0;
+  max-width: 1400px;
   margin: 0 auto;
 }
 .tp-back {
@@ -594,7 +605,7 @@ onMounted(() => {
 .tp-btn--danger:hover { background: rgba(239,68,68,0.18); }
 
 /* ━━ 已保存计划 ━━ */
-.tp-saved { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+.tp-saved { max-width: 1400px; margin: 0 auto; padding: 0 48px; }
 .tp-section-bar {
   display: flex;
   justify-content: space-between;
@@ -657,7 +668,7 @@ onMounted(() => {
 .tp-plan-card__del:hover { background: rgba(239,68,68,0.1); }
 
 /* ━━ 向导 ━━ */
-.tp-wizard { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+.tp-wizard { max-width: 1400px; margin: 0 auto; padding: 0 48px; }
 
 /* 进度条 */
 .tp-progress {
@@ -763,38 +774,43 @@ onMounted(() => {
 }
 
 /* ━━ 计划结果 ━━ */
-.tp-result { max-width: 960px; margin: 0 auto; padding: 0 32px; }
-.tp-result .tp-back { display: block; margin-bottom: 20px; }
+.tp-result { max-width: 1400px; margin: 0 auto; padding: 0 48px; }
 
 /* 概览 */
 .tp-overview {
-  padding: 28px; border-radius: 20px;
+  padding: 22px 28px; border-radius: 16px;
   background: linear-gradient(135deg, rgba(255,202,40,0.06) 0%, rgba(41,98,255,0.06) 100%);
   border: 1px solid rgba(255,202,40,0.15);
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.2);
 }
-.tp-overview__head h2 { margin: 0 0 8px; font-size: 22px; font-weight: 800; }
-.tp-overview__summary { color: #94a3b8; margin: 0 0 24px; font-size: 14px; line-height: 1.7; }
+.tp-overview__top {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 14px;
+}
+.tp-overview__head { flex: 1; min-width: 0; }
+.tp-overview__head h2 { margin: 0 0 4px; font-size: 20px; font-weight: 800; }
+.tp-overview__summary { color: #94a3b8; margin: 0; font-size: 13px; line-height: 1.6; }
 .tp-overview__stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
 }
 .tp-stat {
-  text-align: center; padding: 18px 12px;
-  border-radius: 14px;
+  text-align: center; padding: 10px 16px;
+  border-radius: 10px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.06);
 }
 .tp-stat__val {
-  font-size: 32px; font-weight: 900;
+  font-size: 22px; font-weight: 900;
   background: linear-gradient(135deg, #ffca28, #ff8a25);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.tp-stat__label { font-size: 12px; color: #64748b; margin-top: 4px; }
+.tp-stat__label { font-size: 11px; color: #64748b; margin-top: 2px; }
 .tp-overview__tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tp-overview__tags-label { color: #475569; font-size: 13px; font-weight: 600; margin-right: 4px; }
 .tp-otag {
@@ -945,6 +961,32 @@ onMounted(() => {
 .tp-status--attempted { color: #fbbf24; background: rgba(251,191,36,0.1); }
 
 /* 操作栏 */
+.tp-result .tp-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.tp-top-bar .tp-back { margin-bottom: 0; }
+
+/* 知识点显隐切换 */
+.tp-toggle-tags {
+  padding: 6px 16px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.tp-toggle-tags:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.22);
+}
+.tp-toggle-tags.active {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.4);
+  color: #c7d2fe;
+}
+
 .tp-result__actions {
   display: flex; gap: 12px; margin-top: 32px; align-items: center;
 }
@@ -961,8 +1003,11 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .tp-header, .tp-saved, .tp-wizard, .tp-result { padding-left: 16px; padding-right: 16px; }
-  .tp-overview__stats { grid-template-columns: repeat(2, 1fr); }
+  .tp-overview__top { flex-direction: column; align-items: stretch; }
+  .tp-overview__stats { flex-wrap: wrap; }
+  .tp-stat { flex: 1 1 calc(50% - 10px); }
   .tp-levels, .tp-comps { grid-template-columns: 1fr 1fr; }
   .tp-plans-grid { grid-template-columns: 1fr; }
+  .tp-header { padding-top: 16px; }
 }
 </style>

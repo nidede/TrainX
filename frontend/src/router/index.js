@@ -41,17 +41,28 @@ const routes = [
   },
   {
     path: '/user-center',
-    component: UserCenter
+    component: UserCenter,
+    meta: { requiresAuth: true }
   },
   {
     path: '/training-plan',
-    component: TrainingPlan
+    component: TrainingPlan,
+    meta: { requiresAuth: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫：未登录用户访问需认证页面时跳转登录
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth && !localStorage.getItem('trainx_token')) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router

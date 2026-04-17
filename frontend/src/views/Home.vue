@@ -110,20 +110,20 @@ const continueLearning = () => {
     radial-gradient(circle at right, rgba(41, 98, 255, 0.18), transparent 25%),
     linear-gradient(180deg, #060812 0%, #09111e 100%);
   color: #f8fafc;
-  padding: 32px 40px;
+  padding: 32px 0;
   font-family: "Consolas", "Monaco", monospace;
 }
-
 .home-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding: 18px 24px;
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  padding: 18px 48px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   backdrop-filter: blur(12px);
-  margin-bottom: 40px;
 }
 
 .logo-block {
@@ -192,12 +192,12 @@ const continueLearning = () => {
   gap: 28px;
   align-items: center;
   margin: 0 auto 40px;
-  max-width: 1080px;
-  padding: 0 16px;
+  max-width: 1400px;
+  padding: 0 48px;
 }
 
 .hero-copy {
-  max-width: 520px;
+  max-width: 600px;
 }
 
 .hero-label {
@@ -218,7 +218,7 @@ const continueLearning = () => {
 }
 
 .hero-copy p {
-  max-width: 520px;
+  max-width: 600px;
   color: #cbd5e1;
   line-height: 1.8;
   margin-bottom: 30px;
@@ -299,6 +299,8 @@ const continueLearning = () => {
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .overview-section h2 {
@@ -337,6 +339,9 @@ const continueLearning = () => {
   gap: 20px;
   color: #94a3b8;
   font-size: 14px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (max-width: 960px) {

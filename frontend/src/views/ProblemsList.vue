@@ -42,12 +42,53 @@
       </div>
     </div>
 
+    <div class="filter-row">
+      <div class="status-chips">
+        <span class="filter-label">做题状态</span>
+        <button
+          v-for="s in statusOptions"
+          :key="s.value"
+          :class="['status-chip', { active: selectedStatus === s.value }]"
+          @click="toggleStatusFilter(s.value)"
+        >{{ s.label }}</button>
+      </div>
+      <div class="sort-selector">
+        <span class="filter-label">排序</span>
+        <select v-model="sortOrder" class="sort-select" @change="fetchProblems(1)">
+          <option value="">默认</option>
+          <option value="difficulty">难度升序</option>
+          <option value="-difficulty">难度降序</option>
+          <option value="title">标题 A-Z</option>
+          <option value="-title">标题 Z-A</option>
+        </select>
+      </div>
+      <button :class="['toggle-tags-btn', { active: showTags }]" @click="showTags = !showTags">
+        {{ showTags ? '隐藏知识点' : '显示知识点' }}
+      </button>
+    </div>
+
     <div v-if="selectedTags.length > 0" class="selected-tags-bar">
       <span class="selected-label">已选知识点：</span>
       <span v-for="name in selectedTags" :key="name" class="selected-tag" @click="toggleTag(name)">
         {{ name }} ×
       </span>
       <button class="clear-tags" @click="clearTags">清除全部</button>
+    </div>
+
+    <div v-if="isLoggedIn && problems.length > 0" class="stats-bar-wrap">
+      <div class="stats-bar">
+        <div class="stat-item stat-total"><span class="stat-num">{{ totalCount }}</span><span class="stat-label">总题</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-solved"><span class="stat-num">{{ pageSolvedCount }}</span><span class="stat-label">已完成</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-attempted"><span class="stat-num">{{ pageAttemptedCount }}</span><span class="stat-label">尝试中</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-unsolved"><span class="stat-num">{{ pageUnsolvedCount }}</span><span class="stat-label">未做</span></div>
+        <div class="stat-progress">
+          <span class="stat-progress-bar"><span class="stat-progress-fill" :style="{ width: (pageSolvedCount / problems.length * 100) + '%' }"></span></span>
+          <span class="stat-progress-text">{{ Math.round(pageSolvedCount / problems.length * 100) }}%</span>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">加载中…</div>
@@ -71,7 +112,7 @@
             <span class="dot">·</span>
             <span :class="['status', getStatusClass(p.id)]">{{ getStatusText(p.id) }}</span>
           </div>
-          <div class="tags">
+          <div v-if="showTags" class="tags">
             <span v-for="t in p.tags" :key="t.id" class="tag">{{ t.name }}</span>
           </div>
         </article>
@@ -110,6 +151,11 @@ const problemStatus = ref({})
 const currentPage = ref(1)
 const totalCount = ref(0)
 const totalPages = ref(1)
+const selectedStatus = ref('')
+const sortOrder = ref('')
+const showTags = ref(true)
+
+const isLoggedIn = computed(() => !!localStorage.getItem('trainx_token'))
 
 const difficultyOptions = [
   { value: 0, label: 'Lv0 入门' },
@@ -119,6 +165,12 @@ const difficultyOptions = [
   { value: 4, label: 'Lv4 较难' },
   { value: 5, label: 'Lv5 困难' },
   { value: 6, label: 'Lv6 极难' },
+]
+
+const statusOptions = [
+  { value: 'solved', label: '已完成' },
+  { value: 'attempted', label: '尝试中' },
+  { value: 'unsolved', label: '未做' },
 ]
 
 const knowledgePoints = [
@@ -137,6 +189,11 @@ function toggleDifficulty(val) {
   } else {
     selectedDifficulties.value.push(val)
   }
+  fetchProblems(1)
+}
+
+function toggleStatusFilter(val) {
+  selectedStatus.value = selectedStatus.value === val ? '' : val
   fetchProblems(1)
 }
 
@@ -216,6 +273,12 @@ async function fetchProblems(page = 1) {
     if (search) {
       params.set('search', search)
     }
+    if (selectedStatus.value) {
+      params.set('status', selectedStatus.value)
+    }
+    if (sortOrder.value) {
+      params.set('ordering', sortOrder.value)
+    }
     const res = await axios.get(`/api/problems/?${params}`)
     problems.value = res.data.results || []
     totalCount.value = res.data.count || 0
@@ -236,7 +299,9 @@ function goPage(page) {
 
 onMounted(async () => {
   await fetchProblems(1)
-  await fetchUserProblems()
+  if (isLoggedIn.value) {
+    await fetchUserProblems()
+  }
 })
 
 // 获取用户做题记录
@@ -262,6 +327,8 @@ async function markAsAttempted(problemId) {
     try {
       await axios.post('/api/users/problems/', { problem_id: problemId, solved: false })
     } catch (e) {
+      // 回滚本地状态
+      delete problemStatus.value[problemId]
       console.error('保存题目状态失败', e)
     }
   }
@@ -271,10 +338,13 @@ async function markAsAttempted(problemId) {
 async function toggleStatus(problemId) {
   const currentStatus = problemStatus.value[problemId] || { solved: false, attempted: false }
   const newSolved = !currentStatus.solved
+  const oldStatus = { ...currentStatus }
   problemStatus.value[problemId] = { solved: newSolved, attempted: true }
   try {
     await axios.post('/api/users/problems/', { problem_id: problemId, solved: newSolved })
   } catch (e) {
+    // 回滚本地状态
+    problemStatus.value[problemId] = oldStatus
     console.error('保存题目状态失败', e)
   }
 }
@@ -305,21 +375,45 @@ function getCardClass(problemId) {
   return ''
 }
 
+// 页面内统计
+const pageSolvedCount = computed(() =>
+  problems.value.filter(p => problemStatus.value[p.id]?.solved).length
+)
+const pageAttemptedCount = computed(() =>
+  problems.value.filter(p => problemStatus.value[p.id]?.attempted && !problemStatus.value[p.id]?.solved).length
+)
+const pageUnsolvedCount = computed(() =>
+  problems.value.filter(p => !problemStatus.value[p.id]).length
+)
+
 const filtered = computed(() => problems.value)
 </script>
 
 <style scoped>
 .problems-page {
-  padding: 28px 20px;
-  max-width: 1100px;
-  margin: 0 auto;
+  min-height: 100vh;
+  padding: 32px 0;
   color: #e6eef8;
+  background: radial-gradient(ellipse at 20% 0%, rgba(255,202,40,0.06), transparent 50%),
+              radial-gradient(ellipse at 80% 100%, rgba(41,98,255,0.06), transparent 50%),
+              #0b1120;
+}
+.page-header,
+.toolbar,
+.filter-row,
+.selected-tags-bar,
+.stats-bar-wrap,
+.grid,
+.pagination,
+.empty,
+.loading {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 48px;
+  padding-right: 48px;
 }
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
   margin-bottom: 18px;
 }
 .header-left {
@@ -351,7 +445,7 @@ const filtered = computed(() => problems.value)
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .search-input {
   padding: 10px 14px;
@@ -390,6 +484,95 @@ const filtered = computed(() => problems.value)
 .chip.active {
   background: rgba(99,102,241,0.2);
   border-color: rgba(99,102,241,0.5);
+  color: #c7d2fe;
+}
+
+/* 第二行筛选：状态 + 排序 */
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.status-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.status-chip {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.status-chip:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.22);
+}
+.status-chip.active--solved,
+.status-chip.active {
+  background: rgba(74,222,128,0.15);
+  border-color: rgba(74,222,128,0.4);
+  color: #4ade80;
+}
+.sort-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sort-select {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #cbd5e1;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.sort-select:focus {
+  border-color: rgba(99,102,241,0.4);
+}
+.sort-select option {
+  background: #1a1f2e;
+  color: #cbd5e1;
+}
+
+/* 知识点显隐切换 */
+.toggle-tags-btn {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.toggle-tags-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.22);
+}
+.toggle-tags-btn.active {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.4);
   color: #c7d2fe;
 }
 
@@ -525,6 +708,68 @@ const filtered = computed(() => problems.value)
 .clear-tags:hover {
   background: rgba(255,82,82,0.16);
 }
+
+/* 进度统计条 */
+.stats-bar-wrap {
+  margin-bottom: 10px;
+}
+.stats-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  flex-wrap: wrap;
+}
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stat-num {
+  font-size: 14px;
+  font-weight: 800;
+}
+.stat-label {
+  font-size: 12px;
+  color: #64748b;
+}
+.stat-total .stat-num { color: #e2e8f0; }
+.stat-solved .stat-num { color: #4ade80; }
+.stat-attempted .stat-num { color: #fbbf24; }
+.stat-unsolved .stat-num { color: #94a3b8; }
+.stat-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.08);
+}
+.stat-progress {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-progress-bar {
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.stat-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  transition: width 0.3s ease;
+}
+.stat-progress-text {
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .loading { padding: 40px; color: #94a3b8 }
 .empty { padding: 40px; color: #94a3b8 }
 .grid {
@@ -681,5 +926,8 @@ const filtered = computed(() => problems.value)
 @media (max-width: 720px) {
   .toolbar { flex-direction: column; align-items: stretch }
   .search-input { width: 100%; min-width: auto }
+  .filter-row { flex-direction: column; align-items: stretch }
+  .stats-bar { display: flex; flex-direction: column; gap: 10px; }
+  .stat-progress { margin-left: 0; }
 }
 </style>

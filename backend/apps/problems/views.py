@@ -26,6 +26,37 @@ class ProblemViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(
                 models.Q(title__icontains=search) | models.Q(tags__name__icontains=search)
             ).distinct()
+
+        # 按用户做题状态筛选（需登录）
+        status_filter = self.request.query_params.get('status')
+        if status_filter and self.request.user.is_authenticated:
+            from apps.users.models import UserProblem
+            if status_filter == 'solved':
+                solved_ids = UserProblem.objects.filter(
+                    user=self.request.user, solved=True
+                ).values_list('problem_id', flat=True)
+                queryset = queryset.filter(id__in=solved_ids)
+            elif status_filter == 'attempted':
+                attempted_ids = UserProblem.objects.filter(
+                    user=self.request.user, solved=False
+                ).values_list('problem_id', flat=True)
+                queryset = queryset.filter(id__in=attempted_ids)
+            elif status_filter == 'unsolved':
+                done_ids = UserProblem.objects.filter(
+                    user=self.request.user
+                ).values_list('problem_id', flat=True)
+                queryset = queryset.exclude(id__in=done_ids)
+
+        # 排序
+        ordering = self.request.query_params.get('ordering')
+        if ordering in ('difficulty', '-difficulty', 'title', '-title'):
+            field_map = {
+                'difficulty': 'unified_difficulty',
+                '-difficulty': '-unified_difficulty',
+                'title': 'title',
+                '-title': '-title',
+            }
+            queryset = queryset.order_by(field_map[ordering])
         return queryset
 
 

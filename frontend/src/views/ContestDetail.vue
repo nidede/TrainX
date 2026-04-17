@@ -602,12 +602,21 @@ const contest = computed(() => contestData[props.id])
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  padding: 36px 40px;
+  padding: 36px 0;
   color: #f8fafc;
   background: radial-gradient(circle at top left, rgba(255, 202, 40, 0.16), transparent 30%),
     radial-gradient(circle at right, rgba(41, 98, 255, 0.18), transparent 25%),
     linear-gradient(180deg, #060812 0%, #09111e 100%);
   font-family: "Consolas", "Monaco", monospace;
+}
+.detail-header,
+.detail-card,
+.detail-message {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 48px;
+  padding-right: 48px;
 }
 
 .detail-header {

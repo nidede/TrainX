@@ -58,7 +58,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
 const username = ref('')
@@ -67,6 +67,7 @@ const loading = ref(false)
 const message = ref('')
 const messageType = ref('')
 const router = useRouter()
+const route = useRoute()
 
 const login = async () => {
   loading.value = true
@@ -80,7 +81,8 @@ const login = async () => {
     })
     localStorage.setItem('trainx_token', res.data.token)
     localStorage.setItem('trainx_user', username.value)
-    router.push('/home')
+    const redirect = route.query.redirect || '/home'
+    router.push(redirect)
   } catch (err) {
     message.value = err.response?.data?.detail || '登录失败，请检查用户名和密码'
     messageType.value = 'error'

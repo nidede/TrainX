@@ -8,6 +8,9 @@ import ContestDetail from '../views/ContestDetail.vue'
 import ProblemsList from '../views/ProblemsList.vue'
 import UserCenter from '../views/UserCenter.vue'
 import TrainingPlan from '../views/TrainingPlan.vue'
+import BlogList from '../views/BlogList.vue'
+import BlogDetail from '../views/BlogDetail.vue'
+import BlogEditor from '../views/BlogEditor.vue'
 
 const routes = [
   {
@@ -47,6 +50,25 @@ const routes = [
   {
     path: '/training-plan',
     component: TrainingPlan,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/blog',
+    component: BlogList
+  },
+  {
+    path: '/blog/create',
+    component: BlogEditor,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/blog/:id',
+    component: BlogDetail,
+    props: true
+  },
+  {
+    path: '/blog/:id/edit',
+    component: BlogEditor,
     meta: { requiresAuth: true }
   }
 ]

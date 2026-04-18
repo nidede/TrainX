@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.crawler',
     'apps.problems',
+    'apps.blog',
 ]
 
 MIDDLEWARE = [

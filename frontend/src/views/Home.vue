@@ -53,6 +53,10 @@
           <div class="hero-card-title">智能训练</div>
           <p>生成个性化赛前计划，助力备战效率最大化。</p>
         </router-link>
+        <router-link to="/blog" class="hero-card green hero-card-link">
+          <div class="hero-card-title">竞赛博客</div>
+          <p>分享备赛经验、题解心得，与社区交流成长。</p>
+        </router-link>
       </div>
     </section>
 
@@ -292,6 +296,10 @@ const continueLearning = () => {
 
 .hero-card.red {
   border-color: rgba(255, 82, 82, 0.35);
+}
+
+.hero-card.green {
+  border-color: rgba(74, 222, 128, 0.35);
 }
 
 .overview-section {

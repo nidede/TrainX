@@ -17,6 +17,7 @@ class ProblemSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
+            'translated_description',
             'unified_difficulty',
             'platform',
             'contest_name',

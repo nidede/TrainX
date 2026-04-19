@@ -107,26 +107,10 @@ function insertMarkdown(before, after) {
   ta.selectionEnd = start + before.length + (selected || '文本').length
 }
 
-const renderedPreview = computed(() => simpleMarkdown(content.value))
-
-function simpleMarkdown(text) {
-  if (!text) return '<p style="color:#64748b">预览区域</p>'
-  let html = text
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-  html = html.replace(/((?:<li>.*?<\/li><br>?)+)/g, '<ul>$1</ul>')
-  return `<p>${html}</p>`
-}
+const renderedPreview = computed(() => {
+  if (!content.value) return '<p style="color:#64748b">预览区域</p>'
+  return window.renderMarkdown(content.value)
+})
 
 async function saveDraft() {
   const data = {

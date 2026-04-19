@@ -3,6 +3,7 @@ from .views import (
     RegisterView, LoginView, UserCenterView, UserProblemsView,
     CompetitionConfigView, GenerateTrainingPlanView, SaveTrainingPlanView,
     TrainingPlanListView, TrainingPlanDetailView,
+    CozeChatView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('training-plans/generate/', GenerateTrainingPlanView.as_view()),
     path('training-plans/save/', SaveTrainingPlanView.as_view()),
     path('training-plans/<int:pk>/', TrainingPlanDetailView.as_view()),
+    path('coze-chat/', CozeChatView.as_view()),
 ]

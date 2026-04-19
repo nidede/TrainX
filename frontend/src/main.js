@@ -3,6 +3,36 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
+import { marked } from 'marked'
+import katex from 'katex'
+
+// ── 全局 Markdown 配置 ──
+marked.use({ gfm: true, breaks: true })
+
+// 自定义渲染器：用 KaTeX 渲染 LaTeX
+const renderer = new marked.Renderer()
+const origCode = renderer.code.bind(renderer)
+renderer.code = function (obj) {
+  // marked v18 code handler receives object
+  if (typeof obj === 'object' && obj.lang === 'math') {
+    try { return katex.renderToString(obj.text, { displayMode: true, throwOnError: false }) } catch { return `<code>${obj.text}</code>` }
+  }
+  return typeof obj === 'object' ? origCode(obj) : origCode(...arguments)
+}
+
+// 在 Markdown 渲染前先处理 LaTeX
+window.renderMarkdown = function (text) {
+  if (!text) return ''
+  // 块级公式 $...$
+  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, formula) => {
+    try { return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false }) } catch { return m }
+  })
+  // 行内公式 $...$（不匹配 $）
+  text = text.replace(/(?<!\$)\$(?!\$)(.*?)\$(?!\$)/g, (m, formula) => {
+    try { return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false }) } catch { return m }
+  })
+  return marked(text, { renderer })
+}
 
 // 全局设置：每次请求自动带上 Token
 axios.interceptors.request.use(config => {

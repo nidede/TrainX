@@ -192,13 +192,13 @@
                 <input type="checkbox" :id="`tp-p-${p.id}`" :checked="isSolved(p.id)" @change="toggleStatus(p.id)" />
                 <label :for="`tp-p-${p.id}`"></label>
               </div>
-              <a :href="p.source_url" target="_blank" rel="noopener noreferrer" class="tp-problem__main" @click="markAsAttempted(p.id)">
+              <router-link :to="`/problems/${p.id}`" class="tp-problem__main" @click="markAsAttempted(p.id)">
                 <span class="tp-problem__diff">Lv{{ p.difficulty || '—' }}</span>
                 <span class="tp-problem__title">{{ p.title }}</span>
                 <span v-if="tpShowTags" class="tp-problem__tags">
                   <span v-for="t in p.tags.slice(0, 3)" :key="t" class="tp-problem__tag">{{ t }}</span>
                 </span>
-              </a>
+              </router-link>
               <span :class="['tp-problem__status', getStatusClass(p.id)]">{{ getStatusText(p.id) }}</span>
             </div>
           </div>

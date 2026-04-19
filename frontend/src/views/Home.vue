@@ -82,12 +82,47 @@
       <span>TrainX · 竞赛训练助手</span>
       <span>专注高校竞赛人才培养与实战能力提升</span>
     </footer>
+
+    <!-- AI 悬浮球 + 聊天面板 -->
+    <div :class="['ai-fab', { 'ai-fab--active': chatOpen }]" @click="chatOpen = !chatOpen">
+      <span v-if="!chatOpen" class="ai-fab-icon">AI</span>
+      <span v-else class="ai-fab-icon">&times;</span>
+    </div>
+
+    <div v-if="chatOpen" class="ai-chat-panel">
+      <div class="ai-chat-header">
+        <span>AI 训练助手</span>
+        <button class="ai-chat-close" @click="chatOpen = false">&times;</button>
+      </div>
+      <div class="ai-chat-messages" ref="chatMessagesRef">
+        <div v-if="chatMessages.length === 0" class="ai-chat-welcome">
+          你好！我是 TrainX AI 助手，可以帮你解答算法问题、制定训练计划。
+        </div>
+        <div v-for="(msg, i) in chatMessages" :key="i" :class="['ai-chat-msg', `ai-chat-msg--${msg.role}`]">
+          <div class="ai-chat-msg-text">{{ msg.content }}</div>
+        </div>
+        <div v-if="chatLoading" class="ai-chat-msg ai-chat-msg--assistant">
+          <div class="ai-chat-msg-text ai-typing">思考中…</div>
+        </div>
+      </div>
+      <div class="ai-chat-input-bar">
+        <input
+          v-model="chatInput"
+          placeholder="输入问题…"
+          class="ai-chat-input"
+          @keydown.enter="sendMessage"
+          :disabled="chatLoading"
+        />
+        <button class="ai-chat-send" :disabled="!chatInput.trim() || chatLoading" @click="sendMessage">发送</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const username = ref('')
 const router = useRouter()
@@ -104,6 +139,45 @@ const logout = () => {
 
 const continueLearning = () => {
   router.push('/training-plan')
+}
+
+// ── AI 聊天 ──
+const chatOpen = ref(false)
+const chatInput = ref('')
+const chatLoading = ref(false)
+const chatMessages = ref([])
+const chatMessagesRef = ref(null)
+const conversationId = ref('')
+
+async function sendMessage() {
+  const text = chatInput.value.trim()
+  if (!text || chatLoading.value) return
+  chatMessages.value.push({ role: 'user', content: text })
+  chatInput.value = ''
+  chatLoading.value = true
+  await nextTick()
+  scrollToBottom()
+
+  try {
+    const res = await axios.post('/api/users/coze-chat/', {
+      message: text,
+      conversation_id: conversationId.value,
+    })
+    conversationId.value = res.data.conversation_id || ''
+    chatMessages.value.push({ role: 'assistant', content: res.data.answer })
+  } catch (e) {
+    chatMessages.value.push({ role: 'assistant', content: '抱歉，AI 助手暂时无法回复，请稍后再试。' })
+  } finally {
+    chatLoading.value = false
+    await nextTick()
+    scrollToBottom()
+  }
+}
+
+function scrollToBottom() {
+  if (chatMessagesRef.value) {
+    chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
+  }
 }
 </script>
 
@@ -352,6 +426,152 @@ const continueLearning = () => {
   margin-right: auto;
 }
 
+/* ── AI 悬浮球 ── */
+.ai-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffca28, #2962ff);
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(41, 98, 255, 0.35);
+  z-index: 1000;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.ai-fab:hover { transform: scale(1.1); }
+.ai-fab--active {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  box-shadow: none;
+}
+.ai-fab-icon {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ── AI 聊天面板 ── */
+.ai-chat-panel {
+  position: fixed;
+  bottom: 92px;
+  right: 28px;
+  width: 380px;
+  height: 520px;
+  border-radius: 16px;
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+  overflow: hidden;
+}
+.ai-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-weight: 700;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+.ai-chat-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+.ai-chat-close:hover { color: #fff; }
+.ai-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-chat-welcome {
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  padding: 20px 10px;
+  line-height: 1.6;
+}
+.ai-chat-msg {
+  max-width: 85%;
+}
+.ai-chat-msg--user {
+  align-self: flex-end;
+}
+.ai-chat-msg--assistant {
+  align-self: flex-start;
+}
+.ai-chat-msg-text {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ai-chat-msg--user .ai-chat-msg-text {
+  background: linear-gradient(135deg, #2962ff, #1e40af);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.ai-chat-msg--assistant .ai-chat-msg-text {
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+  border-bottom-left-radius: 4px;
+}
+.ai-typing {
+  color: #64748b;
+  font-style: italic;
+}
+.ai-chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+}
+.ai-chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: #e2e8f0;
+  font-size: 14px;
+}
+.ai-chat-input:focus { outline: none; border-color: rgba(99,102,241,0.4); }
+.ai-chat-input::placeholder { color: #475569; }
+.ai-chat-send {
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffca28, #2962ff);
+  color: #111827;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.ai-chat-send:hover { opacity: 0.85; }
+.ai-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
 @media (max-width: 960px) {
   .hero-panel {
     grid-template-columns: 1fr;
@@ -364,6 +584,13 @@ const continueLearning = () => {
   .home-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .ai-chat-panel {
+    width: calc(100vw - 24px);
+    right: 12px;
+    bottom: 84px;
+    height: 60vh;
   }
 }
 </style>

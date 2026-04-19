@@ -2,12 +2,13 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer, UserProblemSerializer, TrainingPlanSerializer
 from .models import UserProblem, TrainingPlan
 from .training_generator import generate_training_plan, COMPETITION_CONFIGS, LEVEL_DESCRIPTIONS
+import requests as http_requests
 
 
 class RegisterView(APIView):
@@ -213,3 +214,76 @@ class TrainingPlanDetailView(APIView):
             return Response({"msg": "计划不存在"}, status=404)
         plan.delete()
         return Response({"msg": "已删除"})
+
+
+# ── Coze AI 聊天代理 ──────────────────────────────
+
+COZE_API = 'https://api.coze.cn/v3'
+COZE_BOT_ID = '7630011794798493747'
+COZE_TOKEN = 'pat_NVu9OZFIiaLRKSRNwNSCUGbGQQe64NbcKQFUrK2c8KCfsp03qHs9yc5SdgJTRlmX'
+
+
+class CozeChatView(APIView):
+    """代理前端与 Coze Bot 的对话，避免暴露 Token"""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        message = request.data.get('message', '').strip()
+        conversation_id = request.data.get('conversation_id', '')
+        if not message:
+            return Response({'msg': '消息不能为空'}, status=400)
+
+        user_id = str(request.user.id) if request.user.is_authenticated else 'anonymous'
+
+        headers = {
+            'Authorization': f'Bearer {COZE_TOKEN}',
+            'Content-Type': 'application/json',
+        }
+        payload = {
+            'bot_id': COZE_BOT_ID,
+            'user_id': user_id,
+            'stream': False,
+            'auto_save_history': True,
+            'additional_messages': [
+                {'role': 'user', 'content': message, 'content_type': 'text'}
+            ],
+        }
+        if conversation_id:
+            payload['conversation_id'] = conversation_id
+
+        # 发起对话
+        resp = http_requests.post(f'{COZE_API}/chat', headers=headers, json=payload, timeout=30)
+        if resp.status_code != 200:
+            return Response({'msg': 'Coze API 调用失败', 'detail': resp.text}, status=502)
+
+        data = resp.json().get('data', {})
+        chat_id = data.get('id', '')
+        conv_id = data.get('conversation_id', conversation_id)
+
+        # 轮询等待完成
+        import time
+        for _ in range(60):
+            r = http_requests.get(f'{COZE_API}/chat/retrieve', headers=headers,
+                                  params={'chat_id': chat_id, 'conversation_id': conv_id, 'user_id': user_id},
+                                  timeout=15)
+            s = r.json().get('data', {}).get('status', '')
+            if s == 'completed':
+                break
+            if s == 'failed':
+                return Response({'msg': 'Bot 处理失败'}, status=502)
+            time.sleep(1)
+
+        # 获取回复
+        msgs = http_requests.get(f'{COZE_API}/chat/message/list', headers=headers,
+                                 params={'chat_id': chat_id, 'conversation_id': conv_id, 'user_id': user_id},
+                                 timeout=15)
+        answer = ''
+        for m in msgs.json().get('data', []):
+            if m['role'] == 'assistant' and m['type'] == 'answer':
+                answer = m['content']
+                break
+
+        return Response({
+            'answer': answer,
+            'conversation_id': conv_id,
+        })

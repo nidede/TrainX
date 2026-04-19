@@ -6,6 +6,7 @@ import Home from '../views/Home.vue'
 import SixTracks from '../views/SixTracks.vue'
 import ContestDetail from '../views/ContestDetail.vue'
 import ProblemsList from '../views/ProblemsList.vue'
+import ProblemDetail from '../views/ProblemDetail.vue'
 import UserCenter from '../views/UserCenter.vue'
 import TrainingPlan from '../views/TrainingPlan.vue'
 import BlogList from '../views/BlogList.vue'
@@ -36,6 +37,11 @@ const routes = [
   {
     path: '/problems',
     component: ProblemsList
+  },
+  {
+    path: '/problems/:id',
+    component: ProblemDetail,
+    props: true
   },
   {
     path: '/contests/:id',

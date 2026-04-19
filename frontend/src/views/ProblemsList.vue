@@ -99,7 +99,7 @@
       <section class="grid">
         <article v-for="p in filtered" :key="p.id" :class="['card', getCardClass(p.id)]">
           <div class="card-header">
-            <a :href="p.source_url" target="_blank" rel="noopener noreferrer" class="card-title" @click="markAsAttempted(p.id)">{{ p.title }}</a>
+            <router-link :to="`/problems/${p.id}`" class="card-title" @click="markAsAttempted(p.id)">{{ p.title }}</router-link>
             <div class="status-checkbox">
               <input type="checkbox" :id="`problem-${p.id}`" :checked="isSolved(p.id)" @change="toggleStatus(p.id)" />
               <label :for="`problem-${p.id}`"></label>

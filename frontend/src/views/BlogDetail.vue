@@ -91,37 +91,8 @@ function isCommentAuthor(c) {
 
 const renderedContent = computed(() => {
   if (!post.value) return ''
-  return simpleMarkdown(post.value.content)
+  return window.renderMarkdown(post.value.content)
 })
-
-function simpleMarkdown(text) {
-  if (!text) return ''
-  let html = text
-    // 代码块
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>')
-    // 行内代码
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    // 标题
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    // 粗体 & 斜体
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // 链接
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    // 引用
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    // 无序列表
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    // 换行
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-
-  // 包裹 <li>
-  html = html.replace(/((?:<li>.*?<\/li><br>?)+)/g, '<ul>$1</ul>')
-  return `<p>${html}</p>`
-}
 
 async function fetchPost() {
   loading.value = true
@@ -281,64 +252,40 @@ onMounted(fetchPost)
   line-height: 1.8;
   color: #cbd5e1;
 }
-.detail-content :deep(h1) {
-  font-size: 26px;
-  font-weight: 800;
-  color: #fff;
-  margin: 36px 0 14px;
-}
-.detail-content :deep(h2) {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin: 28px 0 12px;
-}
-.detail-content :deep(h3) {
-  font-size: 18px;
-  font-weight: 700;
-  color: #e2e8f0;
-  margin: 22px 0 10px;
-}
-.detail-content :deep(p) { margin: 0 0 16px; }
+.detail-content :deep(h1) { font-size: 26px; font-weight: 800; color: #fff; margin: 36px 0 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; }
+.detail-content :deep(h2) { font-size: 22px; font-weight: 700; color: #fff; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+.detail-content :deep(h3) { font-size: 18px; font-weight: 700; color: #e2e8f0; margin: 22px 0 10px; }
+.detail-content :deep(h4) { font-size: 16px; font-weight: 700; color: #e2e8f0; margin: 16px 0 8px; }
+.detail-content :deep(p) { margin: 0 0 14px; }
 .detail-content :deep(blockquote) {
-  margin: 16px 0;
-  padding: 10px 18px;
-  border-left: 3px solid #818cf8;
-  background: rgba(99,102,241,0.06);
-  color: #94a3b8;
-  border-radius: 0 8px 8px 0;
+  margin: 16px 0; padding: 10px 18px;
+  border-left: 3px solid #818cf8; background: rgba(99,102,241,0.06);
+  color: #94a3b8; border-radius: 0 8px 8px 0;
 }
 .detail-content :deep(code) {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  background: rgba(255,255,255,0.06);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #fbbf24;
+  font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+  background: rgba(255,255,255,0.08); padding: 2px 7px;
+  border-radius: 4px; font-size: 14px; color: #fbbf24;
 }
 .detail-content :deep(pre) {
-  background: #111827;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 16px 20px;
-  overflow-x: auto;
-  margin: 16px 0;
+  background: #0d1117; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 16px 20px; overflow-x: auto; margin: 16px 0;
+  line-height: 1.5;
 }
-.detail-content :deep(pre code) {
-  background: none;
-  padding: 0;
-  color: #e2e8f0;
-}
-.detail-content :deep(ul) {
-  padding-left: 20px;
-  margin: 8px 0;
-}
-.detail-content :deep(li) { margin-bottom: 4px; }
-.detail-content :deep(a) {
-  color: #818cf8;
-  text-decoration: underline;
-}
-.detail-content :deep(strong) { color: #fff; }
+.detail-content :deep(pre code) { background: none; padding: 0; color: #e2e8f0; font-size: 13px; }
+.detail-content :deep(ul) { padding-left: 22px; margin: 8px 0; }
+.detail-content :deep(ol) { padding-left: 22px; margin: 8px 0; }
+.detail-content :deep(li) { margin-bottom: 6px; }
+.detail-content :deep(li)::marker { color: #64748b; }
+.detail-content :deep(a) { color: #818cf8; text-decoration: underline; }
+.detail-content :deep(strong) { color: #fff; font-weight: 700; }
+.detail-content :deep(em) { color: #fbbf24; font-style: italic; }
+.detail-content :deep(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0; }
+.detail-content :deep(table) { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.detail-content :deep(th) { background: rgba(255,255,255,0.06); color: #e2e8f0; padding: 8px 12px; text-align: left; font-weight: 600; border: 1px solid rgba(255,255,255,0.08); }
+.detail-content :deep(td) { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.06); }
+.detail-content :deep(tr:nth-child(even)) { background: rgba(255,255,255,0.02); }
+.detail-content :deep(img) { max-width: 100%; border-radius: 8px; margin: 8px 0; }
 
 /* ── 评论区 ── */
 .comments-section {

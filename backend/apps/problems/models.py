@@ -17,6 +17,7 @@ class Tag(models.Model):
 class Problem(models.Model):
     title = models.CharField(max_length=255, verbose_name='题目名称')
     description = models.TextField(blank=True, verbose_name='题目描述')
+    translated_description = models.TextField(blank=True, default='', verbose_name='翻译后的题目描述')
     unified_difficulty = models.IntegerField(null=True, blank=True, verbose_name='统一难度')
     source_url = models.URLField(unique=True, verbose_name='源链接')
     platform = models.CharField(max_length=64, blank=True, verbose_name='平台')
